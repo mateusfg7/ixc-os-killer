@@ -6,8 +6,8 @@ import { ptBR } from "date-fns/locale";
 import { CalendarIcon, Crosshair, Trash2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Button } from "~/components/ui/ui/button";
-import { Calendar } from "~/components/ui/ui/calendar";
+import { Button } from "~/components/ui/button";
+import { Calendar } from "~/components/ui/calendar";
 
 import {
   Form,
@@ -17,14 +17,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "~/components/ui/ui/form";
-import { Input } from "~/components/ui/ui/input";
+} from "~/components/ui/form";
+import { Input } from "~/components/ui/input";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "~/components/ui/ui/popover";
-import { Textarea } from "~/components/ui/ui/textarea";
+} from "~/components/ui/popover";
+import { Textarea } from "~/components/ui/textarea";
 import { cn } from "~/lib/utils";
 
 const formSchema = z.object({
