@@ -32,13 +32,18 @@ const formSchema = z.object({
   end_date: z.date().default(new Date()),
   message: z
     .string()
-    .min(3)
+    .min(3, "A mensagem deve ter no mínimo 3 caracteres")
     .default(
       `O.S. Encerrado via API | by IXC OS Killer ${new Date().toLocaleString()}`
     ),
-  technician_id: z.number().min(1),
+  technician_id: z
+    .string({ required_error: "ID não pode estar vazio" })
+    .min(1, "ID inválido"),
   date: z.date().default(new Date()),
-  diagnostic_id: z.number().default(277),
+  diagnostic_id: z
+    .string({ required_error: "Diagnóstico não pode estar vazio" })
+    .min(1, "Diagnóstico inválido")
+    .default("277"),
   token: z.string().default(""),
 });
 
@@ -61,7 +66,7 @@ export default function Home() {
       end_date: new Date(),
       date: new Date(),
       message: `O.S. Encerrada via API | by IXC OS Killer ${new Date().toLocaleString()}`,
-      diagnostic_id: 277,
+      diagnostic_id: "277",
     },
   });
 
