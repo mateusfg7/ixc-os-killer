@@ -1,7 +1,8 @@
 "use client";
 
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, DragEvent, useState } from "react";
 import * as XLSX from "xlsx";
+import { Input } from "./ui/input";
 
 type Line = Partial<{
   ID: string;
@@ -12,21 +13,10 @@ type FileInputProps = {
 };
 
 function FileInput({ onUpload }: FileInputProps) {
-  const [data, setData] = useState<Line[]>();
+  const [uploadedFile, setUploadedFile] = useState<File>();
+  const [dragging, setDragging] = useState(false);
 
-  const handleFileUpload = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const target = e.target as HTMLInputElement;
-
-    const files = target.files;
-
-    if (!files || files.length === 0) {
-      return;
-    }
-
-    const file = files[0];
-
+  function handleExtract(file: File) {
     const reader = new FileReader();
 
     reader.onload = (event) => {
@@ -41,20 +31,72 @@ function FileInput({ onUpload }: FileInputProps) {
     };
 
     reader.readAsArrayBuffer(file);
+  }
+
+  const handleFileUpload = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const target = e.target as HTMLInputElement;
+
+    const files = target.files;
+
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    const file = files[0];
+
+    setUploadedFile(file);
+    handleExtract(file);
+  };
+
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragging(false);
+  };
+
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setDragging(false);
+    const file = event.dataTransfer.files[0];
+
+    setUploadedFile(file);
+    handleExtract(file);
   };
 
   return (
-    <div>
-      <input type="file" onChange={handleFileUpload} />
-      {data && (
-        <div className="flex flex-wrap gap-1">
-          {data ? (
-            data.map((line) => <span key={line.ID}>{line.ID}</span>)
+    <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-md">
+      <div
+        className={`w-full h-32 flex items-center justify-center ${
+          dragging ? "bg-gray-100" : "bg-white"
+        }`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <Input
+          type="file"
+          className="hidden"
+          onChange={handleFileUpload}
+          id="fileUpload"
+        />
+        <label
+          htmlFor="fileUpload"
+          className="cursor-pointer flex flex-col items-center justify-center w-full h-full"
+        >
+          {uploadedFile ? (
+            <p className="text-center text-gray-600">{uploadedFile.name}</p>
           ) : (
-            <span>No data</span>
+            <p className="text-center text-gray-600">
+              Arraste e solte a planilha aqui, ou clique para fazer o upload.
+            </p>
           )}
-        </div>
-      )}
+        </label>
+      </div>
     </div>
   );
 }
