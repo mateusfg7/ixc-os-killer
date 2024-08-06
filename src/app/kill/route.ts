@@ -1,44 +1,86 @@
 import { env } from "~/env";
+import { BasicPayload, ixcApiRequest } from "./ixc-api-request";
 
-export async function GET() {
-  const { IXC_API_URL, IXC_TOKEN } = env
+type RequestBody = {
+  ids: string[];
+  start_date: string;
+  end_date: string;
+  message: string;
+  technician_id: string | number;
+  date: string;
+  diagnostic_id: string | number;
+  token?: string;
+};
 
-  const id = 416812;
-  const data_hora_atual = new Date().toISOString();
+type Result = {
+  id: string;
+  status: {
+    code: number;
+    message: string;
+  };
+};
 
-  const base64token = Buffer.from(IXC_TOKEN).toString('base64');
+export async function POST(request: Request) {
+  const { IXC_TOKEN } = env;
 
-  const payload = {
-    id_chamado: id,
-    data_inicio: data_hora_atual,
-    data_final: data_hora_atual,
-    mensagem:
-      "O.S Finalizada por API | Testes na ferramenta online OS Killer | DESCONSIDERAR",
-    id_tecnico: "481", // 481 Mateus Felipe Gonçalves
-    gera_comissao: "S",
-    status: "F",
-    data: data_hora_atual,
-    finaliza_processo: "S",
-    id_su_diagnostico: "268",
+  const {
+    date,
+    diagnostic_id,
+    end_date,
+    ids,
+    message,
+    start_date,
+    technician_id,
+    token,
+  }: RequestBody = await request.json();
+
+  const basicPayload: BasicPayload = {
+    data_inicio: start_date,
+    data_final: end_date,
+    mensagem: message,
+    id_tecnico: String(technician_id),
+    data: date,
+    id_su_diagnostico: String(diagnostic_id),
   };
 
-  // const response = await fetch(IXC_API_URL, {
-  //   body: JSON.stringify(payload),
-  //   method: "POST",
-  //   headers: {
-  //     Authorization: `Basic ${base64token}`,
-  //     "Content-Type": "application/json",
-  //   },
-  // })
+  let success_requests: Result[] = [];
+  let error_requests: Result[] = [];
 
-  // const responseBody = await response.json()
+  for (const id of ids) {
+    const result = await ixcApiRequest({
+      id,
+      token: token ? (token as string) : IXC_TOKEN,
+      basicPayload,
+    });
 
-  const my_ip_api = await fetch("https://api.myip.com").then((res) => res.json())
+    if (
+      result.status.code !== 200 ||
+      result.status.ixc_body?.type === "error"
+    ) {
+      error_requests.push(result);
+    } else {
+      success_requests.push(result);
+    }
+  }
 
-  return new Response(JSON.stringify({
-    // ixc_response: responseBody,
-    // status: response.status,
-    message: "Sucesso",
-    my_ip_api
-  }), { status: 200 })
+  return new Response(
+    JSON.stringify({
+      success_requests,
+      error_requests,
+    })
+  );
+
+  const my_ip_api = await fetch("https://api.myip.com").then((res) =>
+    res.json()
+  );
+
+  return new Response(
+    JSON.stringify({
+      // ixc_response: responseBody,
+      // status: response.status,
+      message: "Sucesso",
+      my_ip_api,
+    }),
+    { status: 200 }
+  );
 }

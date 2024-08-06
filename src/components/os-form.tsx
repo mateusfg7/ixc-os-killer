@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarIcon, Crosshair, Trash2 } from "lucide-react";
+import { CalendarIcon, Crosshair, Loader2, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import * as z from "zod";
@@ -22,8 +22,10 @@ import { cn } from "~/lib/utils";
 import { Calendar } from "./ui/calendar";
 import { Textarea } from "./ui/textarea";
 import { Input } from "./ui/input";
+import FileInput from "./file-input";
 
 export const osFormSchema = z.object({
+  ids: z.string({ required_error: "IDs não podem estar vazios" }),
   start_date: z.date().default(new Date()),
   end_date: z.date().default(new Date()),
   message: z
@@ -45,9 +47,10 @@ export const osFormSchema = z.object({
 
 type OSFormProps = {
   onSubmit: (values: z.infer<typeof osFormSchema>) => void;
+  loading?: boolean;
 };
 
-export function OSForm({ onSubmit }: OSFormProps) {
+export function OSForm({ onSubmit, loading = false }: OSFormProps) {
   const form = useForm<z.infer<typeof osFormSchema>>({
     resolver: zodResolver(osFormSchema),
     defaultValues: {
@@ -59,9 +62,53 @@ export function OSForm({ onSubmit }: OSFormProps) {
     },
   });
 
+  const idCount = form.watch("ids")
+    ? form
+        .watch("ids")
+        .split(",")
+        .filter((id) => id !== "").length
+    : 0;
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12">
+        <div className="flex gap-2 items-stretch justify-between">
+          <FormField
+            control={form.control}
+            name="ids"
+            render={({ field }) => (
+              <div className="flex-1 flex flex-col justify-between">
+                <FormItem>
+                  <div>
+                    <FormLabel htmlFor="ids">IDs das OS/Atendimentos</FormLabel>
+                    <FormDescription>
+                      Adicione as IDs separadas por espaços, vírgula ou quebra
+                      de linha.
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Textarea
+                      className="h-32 resize-none"
+                      placeholder="0000, 0001, 0002, 0003, 0004, 0005, ..."
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </div>
+            )}
+          />
+
+          <div className="flex items-center text-sm text-muted-foreground">
+            ou
+          </div>
+
+          <div className="flex-1">
+            <FileInput
+              onUpload={(ids) => form.setValue("ids", ids.join(", "))}
+            />
+          </div>
+        </div>
         <div className="flex gap-5">
           <FormField
             control={form.control}
@@ -297,7 +344,15 @@ export function OSForm({ onSubmit }: OSFormProps) {
           />
         </div>
         <div className="flex items-center justify-between">
-          <span>50 Ordens de serviço serão finalizadas</span>
+          {idCount < 1 && (
+            <span className="text-muted-foreground">Lista de IDs vazia</span>
+          )}
+          {idCount == 1 && (
+            <span>{idCount} Ordem de serviço será finalizada</span>
+          )}
+          {idCount > 1 && (
+            <span>{idCount} Ordens de serviço serão finalizadas</span>
+          )}
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
@@ -308,13 +363,28 @@ export function OSForm({ onSubmit }: OSFormProps) {
               <Trash2 size="1.2rem" strokeWidth="1px" />
               <span>Limpar campos</span>
             </Button>
-            <Button
-              type="submit"
-              className="flex gap-2 items-center justify-center"
-            >
-              <Crosshair size="1.2rem" strokeWidth="1px" />
-              <span>Finalizar O.S.</span>
-            </Button>
+            {loading ? (
+              <Button
+                type="submit"
+                className="flex gap-2 items-center justify-center"
+                disabled
+              >
+                <Loader2
+                  size="1.2rem"
+                  strokeWidth="1.5px"
+                  className="animate-spin"
+                />
+                <span>Finalizar O.S.</span>
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                className="flex gap-2 items-center justify-center"
+              >
+                <Crosshair size="1.2rem" strokeWidth="1px" />
+                <span>Finalizar O.S.</span>
+              </Button>
+            )}
           </div>
         </div>
       </form>
