@@ -8,6 +8,6 @@ services:
       - "3000:3000"
     volumes:
       - .:/app
-    command: "bun install && bun dev"
+    command: sh -c "bun install && bun run start"
     environment:
       - NODE_ENV=development
